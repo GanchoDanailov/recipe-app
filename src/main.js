@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router'
 import * as firebase from 'firebase'
 import store from './store'
+import DateFilter from './filters/date'
 import './registerServiceWorker'
 
 import Vuetify from 'vuetify'
@@ -10,7 +11,7 @@ import 'vuetify/src/stylus/app.styl'
 import AlertCmp from './components/Shared/Alert.vue'
 
 Vue.use(Vuetify)
-
+Vue.filter('date', DateFilter)
 Vue.component('app-alert', AlertCmp)
 
 Vue.config.productionTip = false
@@ -25,7 +26,7 @@ new Vue({
       authDomain: 'recipe-app-12cc7.firebaseapp.com',
       databaseURL: 'https://recipe-app-12cc7.firebaseio.com',
       projectId: 'recipe-app-12cc7',
-      storageBucket: '',
+      storageBucket: 'gs://recipe-app-12cc7.appspot.com/',
       messagingSenderId: '506405661568',
       appId: '1:506405661568:web:be96802f6d6e4524'
     })
@@ -34,6 +35,6 @@ new Vue({
         this.$store.dispatch('autoSignIn', user)
       }
     })
-    // this.$store.dispatch('loadMeetups')
+    this.$store.dispatch('loadRecipes')
   }
 }).$mount('#app')

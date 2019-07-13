@@ -1,12 +1,6 @@
 <template>
-  <v-app>
-    <v-navigation-drawer
-      v-model="drawer"
-      :mini-variant="mini"
-      absolute
-      dark
-      temporary
-    >
+  <v-app dark>
+    <v-navigation-drawer v-model="drawer" :mini-variant="mini" absolute dark temporary>
       <v-list class="pa-1">
         <v-list-tile v-if="mini" @click.stop="mini = !mini">
           <v-list-tile-action>
@@ -16,7 +10,7 @@
 
         <v-list-tile avatar tag="div">
           <v-list-tile-avatar>
-            <img src="https://randomuser.me/api/portraits/lego/5.jpg">
+            <img src="https://randomuser.me/api/portraits/lego/5.jpg" />
           </v-list-tile-avatar>
 
           <v-list-tile-content>
@@ -34,12 +28,7 @@
       <v-list class="pt-0" dense>
         <v-divider light></v-divider>
 
-        <v-list-tile
-          v-for="item in menuItems"
-          :key="item.title"
-          @click=""
-          :to="item.link"
-        >
+        <v-list-tile v-for="item in menuItems" :key="item.title" @click :to="item.link">
           <v-list-tile-action>
             <v-icon>{{ item.icon }}</v-icon>
           </v-list-tile-action>
@@ -51,26 +40,18 @@
       </v-list>
     </v-navigation-drawer>
     <v-toolbar>
-      <v-toolbar-side-icon @click.stop="drawer = !drawer" class="hidden-md-and-up"/>
-      <v-toolbar-title>Recipe app</v-toolbar-title>
+      <v-toolbar-side-icon @click.stop="drawer = !drawer" class="hidden-md-and-up" />
+      <v-toolbar-title>
+        <router-link to="/" tag="span" style="cursor: pointer">The Recipe app</router-link>
+      </v-toolbar-title>
       <v-spacer></v-spacer>
       <v-toolbar-items class="hidden-sm-and-down">
-        <v-btn
-          flat
-          v-for="item in menuItems"
-          :key="item.title"
-          :to="item.link">
+        <v-btn flat v-for="item in menuItems" :key="item.title" :to="item.link">
           <v-icon left dark>{{ item.icon }}</v-icon>
           {{ item.title }}
-
         </v-btn>
-        <v-btn
-          v-if="userIsAuthenticated"
-          flat
-          @click="onLogout">
-          <v-icon left dark>exit_to_app</v-icon>
-          Logout
-
+        <v-btn v-if="userIsAuthenticated" flat @click="onLogout">
+          <v-icon left dark>exit_to_app</v-icon>Logout
         </v-btn>
       </v-toolbar-items>
     </v-toolbar>
@@ -81,44 +62,42 @@
       </v-container>
     </v-content>
 
-    <v-footer app>
- 
-    </v-footer>
+    <v-footer app></v-footer>
   </v-app>
 </template>
 
 <script>
-  export default {
-    data () {
-      return {
-        drawer: null,
-        mini: false,
-        right: null
-      }
-    },
-    computed: {
-      menuItems () {
-        let menuItems = [
-          {icon: 'face', title: 'Sign up', link: '/signup'},
-          {icon: 'lock_open', title: 'Sign in', link: '/signin'}
+export default {
+  data() {
+    return {
+      drawer: null,
+      mini: false,
+      right: null
+    }
+  },
+  computed: {
+    menuItems() {
+      let menuItems = [
+        { icon: 'face', title: 'Sign up', link: '/signup' },
+        { icon: 'lock_open', title: 'Sign in', link: '/signin' }
+      ]
+      if (this.userIsAuthenticated) {
+        menuItems = [
+          { icon: 'assignment', title: 'View Recipes', link: '/recipes' },
+          { icon: 'restaurant', title: 'Add You Recipe', link: '/recipe/new' },
+          { icon: 'person', title: 'Profile', link: '/profile' }
         ]
-        if (this.userIsAuthenticated) {
-          menuItems = [
-            {icon: 'supervisor_account', title: 'View Meetups', link: '/meetups'},
-            {icon: 'room', title: 'Organize Meetup', link: '/meetup/new'},
-            {icon: 'person', title: 'Profile', link: '/profile'}
-          ]
-        }
-        return menuItems
-      },
-      userIsAuthenticated () {
-        return this.$store.getters.user !== null && this.$store.getters.user !== undefined
       }
+      return menuItems
     },
-    methods: {
-      onLogout () {
-        this.$store.dispatch('logout')
-      }
+    userIsAuthenticated() {
+      return this.$store.getters.user !== null && this.$store.getters.user !== undefined
+    }
+  },
+  methods: {
+    onLogout() {
+      this.$store.dispatch('logout')
     }
   }
+}
 </script>
