@@ -10,7 +10,7 @@ export default new Vuex.Store({
       {
         imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1950&q=80',
         id: 'afajfjadfaadfa323',
-        title: 'Meetup in New York',
+        title: 'Recipe in New York',
         createdDate: new Date(),
         location: 'New York',
         description: 'New York, New York!'
@@ -18,7 +18,7 @@ export default new Vuex.Store({
       {
         imageUrl: 'https://images.unsplash.com/photo-1556694795-b6423d3d5b28?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1000&q=80',
         id: 'aadsfhbkhlk1241',
-        title: 'Meetup in Paris',
+        title: 'Recipe in Paris',
         createdDate: new Date(),
         location: 'Paris',
         description: 'It\'s Paris!'
@@ -29,6 +29,16 @@ export default new Vuex.Store({
     error: null
   },
   mutations: {
+    likeRecipe (state, payload) {
+      const id = payload.id
+      if (state.user.likedRecipes.findIndex(recipe => recipe.id === id) >= 0) { return } state.user.likedRecipes.push(id)
+      state.user.firebaseKeys[id] = payload.firebaseKey
+    },
+    unlikeRecipe (state, payload) {
+      const likedRecipes = state.user.likedRecipes
+      likedRecipes.splice(likedRecipes.findIndex(recipe => recipe === payload), 1)
+      Reflect.deleteProperty(state.user.firebaseKeys, payload)
+    },
     setLoadedRecipes (state, payload) {
       state.loadedRecipes = payload
     },
@@ -49,11 +59,39 @@ export default new Vuex.Store({
     }
   },
   actions: {
+    likeRecipe ({ commit, getters }, payload) {
+      commit('setLoading', true)
+      const user = getters.user
+      firebase.database().ref('/users/' + user.id).child('/likedRecipes/')
+        .push(payload)
+        .then(data => {
+          commit('setLoading', false)
+          commit('likeRecipe', { id: payload, 'firebaseKey': data.key })
+        })
+        .catch(error => {
+          console.log(error)
+          commit('setLoading', false)
+        })
+    },
+    unlikeRecipe ({ commit, getters }, payload) {
+      const user = getters.user
+      if (!user.firebaseKeys) { return }
+      const firebaseKey = user.firebaseKeys[payload]
+      firebase.database().ref('/users/' + user.id + '/likedRecipes/').child(firebaseKey)
+        .remove()
+        .then(() => {
+          commit('setLoading', false)
+          commit('unlikeRecipe', payload)
+        })
+        .catch(error => {
+          console.log(error)
+          commit('setLoading', false)
+        })
+    },
     loadRecipes ({ commit }) {
       commit('setLoading', true)
       firebase.database().ref('recipes').once('value')
         .then((data) => {
-          console.log('test')
           const recipes = []
           const obj = data.val()
           for (let key in obj) {
@@ -89,7 +127,6 @@ export default new Vuex.Store({
       let key
       firebase.database().ref('recipes').push(recipe)
         .then((data) => {
-          console.log('data', data)
           key = data.key
           return key
         })
@@ -105,11 +142,9 @@ export default new Vuex.Store({
           })
         })
         .then(imageUrl => {
-          console.log('recipe after image', firebase.database().ref('recipes').child(key))
           return firebase.database().ref('recipes').child(key).update({ 'imageUrl': imageUrl })
         })
         .then(() => {
-          console.log('recipe', recipe)
           commit('createRecipe', {
             ...recipe,
             imageUrl: imageUrl,
@@ -127,10 +162,10 @@ export default new Vuex.Store({
         .then(
           obj => {
             commit('setLoading', false)
-            console.log('obj.user', obj)
             const newUser = {
               id: obj.user.uid,
-              registeredRecipes: []
+              likedRecipes: [],
+              firebaseKeys: {}
             }
             commit('setUser', newUser)
           }
@@ -150,10 +185,10 @@ export default new Vuex.Store({
         .then(
           obj => {
             commit('setLoading', false)
-            console.log('obj.user', obj)
             const newUser = {
               id: obj.user.uid,
-              registeredRecipes: []
+              likedRecipes: [],
+              firebaseKeys: {}
             }
             commit('setUser', newUser)
           }
@@ -167,7 +202,37 @@ export default new Vuex.Store({
         )
     },
     autoSignIn ({ commit }, payload) {
-      commit('setUser', { id: payload.uid, registeredRecipes: [] })
+      commit('setUser', {
+        id: payload.uid,
+        likedRecipes: [],
+        firebaseKeys: {}
+      })
+    },
+    fetchUserData ({ commit, getters }, payload) {
+      commit('setLoading', true)
+      firebase.database().ref('/users/' + getters.user.id + '/likedRecipes/').once('value')
+        .then(data => {
+          const values = data.val()
+          let _likedRecipes = []
+          let _swapLikedRecipes = {}
+          for (let key in values) {
+            _likedRecipes.push(values[key])
+            _swapLikedRecipes[values[key]] = key
+          }
+          const updatedUser = {
+            id: getters.user.id,
+            likedRecipes: _likedRecipes,
+            firebaseKeys: _swapLikedRecipes
+          }
+          commit('setLoading', false)
+          commit('setUser', updatedUser)
+          // console.log('_likedRecipes', _likedRecipes)
+          // console.log('_swapLikedRecipes', _swapLikedRecipes)
+        })
+        .catch(error => {
+          console.log(error)
+          commit('setLoading', false)
+        })
     },
     logout ({ commit }) {
       firebase.auth().signOut()
@@ -180,9 +245,12 @@ export default new Vuex.Store({
   getters: {
     loadedRecipes (state) {
       return state.loadedRecipes
-      // .sort((recipeA, recipeB) => {
-      //   return recipeA.date > recipeB.date
-      // })
+        .sort((recipeA, recipeB) => {
+          var c = new Date(recipeA.createdDate)
+          var d = new Date(recipeB.createdDate)
+          return d - c
+          // return recipeB.createdDate - recipeA.createdDate
+        })
     },
     loadedRecipe (state) {
       return (recipeId) => {
