@@ -36,6 +36,7 @@ new Vue({
         this.$store.dispatch('fetchUserData')
       }
     })
+    this.$store.dispatch('initRealTimeListeners')
     this.$store.dispatch('loadRecipes')
   }
 }).$mount('#app')
