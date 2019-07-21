@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
-import * as firebase from 'firebase'
+import firebase from 'firebase'
 import store from './store'
 import DateFilter from './filters/date'
 import './registerServiceWorker'
@@ -21,22 +21,22 @@ new Vue({
   store,
   render: h => h(App),
   created () {
-    firebase.initializeApp({
-      apiKey: 'AIzaSyCc8SpbjSY-DfBDHfy5qpHPZcFA-omFsHo',
-      authDomain: 'recipe-app-12cc7.firebaseapp.com',
-      databaseURL: 'https://recipe-app-12cc7.firebaseio.com',
-      projectId: 'recipe-app-12cc7',
-      storageBucket: 'gs://recipe-app-12cc7.appspot.com/',
-      messagingSenderId: '506405661568',
-      appId: '1:506405661568:web:be96802f6d6e4524'
-    })
+    // firebase.initializeApp({
+    //   apiKey: 'AIzaSyCc8SpbjSY-DfBDHfy5qpHPZcFA-omFsHo',
+    //   authDomain: 'recipe-app-12cc7.firebaseapp.com',
+    //   databaseURL: 'https://recipe-app-12cc7.firebaseio.com',
+    //   projectId: 'recipe-app-12cc7',
+    //   storageBucket: 'gs://recipe-app-12cc7.appspot.com/',
+    //   messagingSenderId: '506405661568',
+    //   appId: '1:506405661568:web:be96802f6d6e4524'
+    // })
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         this.$store.dispatch('autoSignIn', user)
-        this.$store.dispatch('fetchUserData')
+        // this.$store.dispatch('fetchUserData')
       }
     })
-    this.$store.dispatch('initRealTimeListeners')
+    // this.$store.dispatch('initRealTimeListeners')
     this.$store.dispatch('loadRecipes')
   }
 }).$mount('#app')

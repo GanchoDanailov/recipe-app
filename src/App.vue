@@ -14,7 +14,7 @@
           </v-list-tile-avatar>
 
           <v-list-tile-content>
-            <v-list-tile-title>Recipe app</v-list-tile-title>
+            <v-list-tile-title v-if="this.$store.getters.user">{{this.$store.getters.user.email}}</v-list-tile-title>
           </v-list-tile-content>
 
           <v-list-tile-action>
@@ -35,6 +35,15 @@
 
           <v-list-tile-content>
             <v-list-tile-title>{{ item.title }}</v-list-tile-title>
+          </v-list-tile-content>
+        </v-list-tile>
+        <v-list-tile v-if="userIsAuthenticated" @click="onLogout">
+          <v-list-tile-action>
+            <v-icon left dark>exit_to_app</v-icon>
+          </v-list-tile-action>
+
+          <v-list-tile-content>
+            <v-list-tile-title>Logout</v-list-tile-title>
           </v-list-tile-content>
         </v-list-tile>
       </v-list>
@@ -58,6 +67,7 @@
 
     <v-content>
       <v-container fluid>
+        <!-- {{this.$store.state.rating.loadedRatings}} -->
         <router-view></router-view>
       </v-container>
     </v-content>

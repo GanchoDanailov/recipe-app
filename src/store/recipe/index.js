@@ -1,4 +1,5 @@
 import * as firebase from 'firebase'
+import db from '../../firebase'
 
 export default {
   state: {
@@ -28,6 +29,16 @@ export default {
     createRecipe (state, payload) {
       state.loadedRecipes.push(payload)
     },
+    likeRecipe (state, { recipeId, userId }) {
+      const recipe = state.loadedRecipes.find((recipe) => recipe.id === recipeId)
+      if (recipe.likedUsers.findIndex(user => user === userId) >= 0) { return }
+      recipe.likedUsers.push(userId)
+    },
+    unlikeRecipe (state, { recipeId, userId }) {
+      const recipe = state.loadedRecipes.find((recipe) => recipe.id === recipeId)
+      var index = recipe.likedUsers.indexOf(userId)
+      if (index > -1) { recipe.likedUsers.splice(index, 1) }
+    },
     setLoading (state, payload) {
       state.loading = payload
     },
@@ -39,74 +50,57 @@ export default {
     }
   },
   actions: {
+    likeRecipe ({ commit }, { userId, recipeId }) {
+      commit('setLoading', true)
+      let _recipe = db.collection('recipes').doc(recipeId)
+      _recipe.update({
+        likedUsers: firebase.firestore.FieldValue.arrayUnion(userId)
+      })
+        .then(() => commit('likeRecipe', { userId, recipeId }))
+        .then(() => commit('setLoading', false))
+    },
+    unlikeRecipe ({ commit }, { userId, recipeId }) {
+      commit('setLoading', true)
+      let _recipe = db.collection('recipes').doc(recipeId)
+      _recipe.update({
+        likedUsers: firebase.firestore.FieldValue.arrayRemove(userId)
+      })
+        .then(() => commit('unlikeRecipe', { userId, recipeId }))
+        .then(() => commit('setLoading', false))
+    },
     initRealTimeListeners ({ commit, state }) {
-      var recipesRef = firebase.database().ref('recipes')
-      // recipesRef.on('child_added', snapshot => {
-      //   const id = snapshot.key
-      //   var recipes = state.loadedRecipes
-      //   var isRecipeExist = recipes.find(x => x.id === id)
-      //   console.log('isRecipeExist', isRecipeExist)
-      //   if (!isRecipeExist) {
-      //     console.log('id', id)
-      //     console.log('recipes', recipes)
-      //     const recipe = { id, ...snapshot.val() }
-      //     commit('createRecipe', recipe)
-      //     setTimeout(() => {
-      //       console.log('recipes after set', state.loadedRecipes)
-      //     }, 2000)
-      //   } else {
-      //     console.log('exist')
-      //   }
-      // })
-      recipesRef.on('child_changed', snapshot => {
-        const id = snapshot.key
-        const changedRecipe = { id, ...snapshot.val() }
-        let _loadedRecipes = Object.assign([], state.loadedRecipes)
-        var foundIndex = _loadedRecipes.findIndex(x => x.id === id)
-        _loadedRecipes[foundIndex] = changedRecipe
-        commit('setLoadedRecipes', _loadedRecipes)
-      })
-      recipesRef.on('child_removed', function (data) {
-        console.log('child_removed', data)
-      })
+
     },
     loadRecipes ({ commit }) {
       commit('setLoading', true)
-      firebase.database().ref('recipes').once('value')
-        .then((data) => {
-          const recipes = []
-          const obj = data.val()
-          for (let key in obj) {
-            recipes.push({
-              id: key,
-              title: obj[key].title,
-              description: obj[key].description,
-              imageUrl: obj[key].imageUrl,
-              createdDate: obj[key].createdDate,
-              creatorId: obj[key].creatorId
-            })
-          }
-          commit('setLoadedRecipes', recipes)
-          commit('setLoading', false)
+      db.collection('recipes').get().then(querySnapshot => {
+        const recipes = []
+        querySnapshot.forEach(doc => {
+          recipes.push({
+            id: doc.id,
+            title: doc.data().title,
+            description: doc.data().description,
+            imageUrl: doc.data().imageUrl,
+            createdDate: doc.data().createdDate,
+            creatorId: doc.data().creatorId,
+            likedUsers: doc.data().likedUsers
+          })
         })
-        .catch(
-          (error) => {
-            console.log(error)
-            commit('setLoading', false)
-          }
-        )
+        commit('setLoadedRecipes', recipes)
+        commit('setLoading', false)
+      })
     },
     createRecipe ({ commit, getters }, payload) {
-      const recipe = {
+      commit('setLoading', true)
+      let _recipe = {
         title: payload.title,
-        location: payload.location,
         description: payload.description,
         createdDate: payload.createdDate.toISOString(),
-        creatorId: getters.user.id
+        creatorId: getters.user.id,
+        likedUsers: []
       }
       const filename = payload.image.name
-      // const ext = filename.slice(filename.lastIndexOf('.'))
-      var uploadTask = firebase.storage().ref('recipes/' + filename).put(payload.image)
+      let uploadTask = firebase.storage().ref('recipes/' + filename).put(payload.image)
       uploadTask.on('state_changed', function (snapshot) {
         var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
         console.log('Upload is ' + progress + '% done')
@@ -122,57 +116,19 @@ export default {
         console.log('error', error)
       }, function () {
         uploadTask.snapshot.ref.getDownloadURL().then(function (downloadURL) {
-          let _newRecipe = {
-            ...recipe,
+          let _tmpRecipe = {
+            ..._recipe,
             imageUrl: downloadURL
           }
-          firebase.database().ref('recipes').push(_newRecipe)
-            .then(data => {
-              const key = data.key
+          db.collection('recipes').add(_tmpRecipe)
+            .then(docRef => {
               commit('createRecipe', {
-                ...recipe,
-                imageUrl: downloadURL,
-                id: key
+                ..._tmpRecipe,
+                id: docRef.id
               })
-            })
-            .catch((error) => {
-              console.log(error)
-            })
+            }).then(() => { commit('setLoading', false) })
         })
       })
-
-      // Reach out to firebase and store it
-      // let imageUrl
-      // let key
-      // firebase.database().ref('recipes').push(recipe)
-      //   .then((data) => {
-      //     key = data.key
-      //     return key
-      //   })
-      //   .then(key => {
-      //     const filename = payload.image.name
-      //     const ext = filename.slice(filename.lastIndexOf('.'))
-      //     return firebase.storage().ref('recipes/' + key + ext).put(payload.image)
-      //   })
-      //   .then(fileData => {
-      //     return fileData.ref.getDownloadURL().then(function (_imageUrl) {
-      //       imageUrl = _imageUrl
-      //       return imageUrl
-      //     })
-      //   })
-      //   .then(imageUrl => {
-      //     return firebase.database().ref('recipes').child(key).update({ 'imageUrl': imageUrl })
-      //   })
-      //   .then(() => {
-      //     commit('createRecipe', {
-      //       ...recipe,
-      //       imageUrl: imageUrl,
-      //       id: key
-      //     })
-      //   })
-      //   .catch((error) => {
-      //     console.log(error)
-      //   })
     }
   },
   getters: {
@@ -182,7 +138,6 @@ export default {
           var c = new Date(recipeA.createdDate)
           var d = new Date(recipeB.createdDate)
           return d - c
-          // return recipeB.createdDate - recipeA.createdDate
         })
     },
     loadedRecipe (state) {
