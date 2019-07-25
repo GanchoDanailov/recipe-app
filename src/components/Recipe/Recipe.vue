@@ -14,38 +14,72 @@
     <v-layout row wrap>
       <v-flex xs12>
         <v-card>
-          <v-card-title>
-            <h1 class="primary--text">{{ recipe.title }}</h1>
-          </v-card-title>
-          <v-img :src="recipe.imageUrl" height="400px"></v-img>
-          <v-card-text>
-            <div class="rating-component" v-if="userIsAuthenticated">
-              <star-rating
-                v-model="isUserVoted"
-                @rating-selected="setRating"
-                inactive-color="#424242"
-                active-color="#FFFFFF"
-                :border-width="borderWidth"
-                border-color="#FFFFFF"
-                v-bind:star-size="35"
-              />
-              Avarage ratting: {{avgRating}}
-              <br />
-              All reviews: {{totalVotes}}
-              <br />
-            </div>
-            <v-btn
-              outline
-              large
-              fab
-              @click="toggleLike()"
-              v-bind="color"
-              v-if="userIsAuthenticated"
-            >
-              <v-icon>favorite</v-icon>
-            </v-btn>
+          <v-layout row wrap align-center>
+            <v-flex xs12 sm6 text-xs-center>
+              <div class="recipe-title">
+                <h1 class>{{ recipe.title }}</h1>
+              </div>
+            </v-flex>
+            <v-flex xs12 sm6>
+              <v-img :src="recipe.imageUrl" height="400px"></v-img>
+            </v-flex>
+          </v-layout>
 
+          <v-card-text>
             <div class="info--text">{{ recipe.createdDate | date }} - {{ recipe.location }}</div>
+          </v-card-text>
+
+          <v-card-text>
+            <v-layout row wrap>
+              <v-flex xs12 sm6 text-xs-center>
+                <div class="rating-component" v-if="userIsAuthenticated" text-xs-center>
+                  <star-rating
+                    v-model="isUserVoted"
+                    @rating-selected="setRating"
+                    inactive-color="#424242"
+                    active-color="#FFFFFF"
+                    :border-width="borderWidth"
+                    border-color="#FFFFFF"
+                    v-bind:star-size="35"
+                    style="margin: 0 auto; width:210px;"
+                  />
+                  Avarage ratting: {{avgRating}}
+                  <br />
+                  All reviews: {{totalVotes}}
+                  <br />
+                </div>
+              </v-flex>
+              <v-flex xs12 sm6 text-xs-center>
+                <v-btn
+                  outline
+                  large
+                  fab
+                  @click="toggleLike()"
+                  v-bind="color"
+                  v-if="userIsAuthenticated"
+                >
+                  <v-icon>favorite</v-icon>
+                </v-btn>
+              </v-flex>
+            </v-layout>
+            <v-divider></v-divider>
+            <v-container fluid grid-list-sm>
+              <v-layout row wrap>
+                <v-flex v-for="ingredient in recipe.ingredients" :key="ingredient" xs12 sm6 lg4>
+                  <v-list-tile>
+                    <v-list-tile-action>
+                      <v-icon>add_shopping_cart</v-icon>
+                    </v-list-tile-action>
+
+                    <v-list-tile-content>
+                      <v-list-tile-title>{{ingredient}}</v-list-tile-title>
+                    </v-list-tile-content>
+                  </v-list-tile>
+                </v-flex>
+              </v-layout>
+            </v-container>
+
+            <v-divider></v-divider>
             <div>{{ recipe.description }}</div>
           </v-card-text>
           <!-- <v-card-actions>
@@ -132,3 +166,8 @@ export default {
   }
 }
 </script>
+<style lang="scss" scoped>
+.recipe-title {
+  text-align: center;
+}
+</style>

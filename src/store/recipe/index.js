@@ -83,7 +83,8 @@ export default {
             imageUrl: doc.data().imageUrl,
             createdDate: doc.data().createdDate,
             creatorId: doc.data().creatorId,
-            likedUsers: doc.data().likedUsers
+            likedUsers: doc.data().likedUsers,
+            ingredients: doc.data().ingredients
           })
         })
         commit('setLoadedRecipes', recipes)
@@ -97,7 +98,8 @@ export default {
         description: payload.description,
         createdDate: payload.createdDate.toISOString(),
         creatorId: getters.user.id,
-        likedUsers: []
+        likedUsers: [],
+        ingredients: payload.ingredients
       }
       const filename = payload.image.name
       let uploadTask = firebase.storage().ref('recipes/' + filename).put(payload.image)

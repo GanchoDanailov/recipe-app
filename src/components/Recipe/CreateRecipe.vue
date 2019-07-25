@@ -5,6 +5,7 @@
         <h4>Create a new Recipe</h4>
       </v-flex>
     </v-layout>
+
     <v-layout row>
       <v-flex xs12>
         <form @submit.prevent="onCreateRecipe">
@@ -53,6 +54,24 @@
               ></v-textarea>
             </v-flex>
           </v-layout>
+          <v-layout row>
+            <v-flex xs12 sm6 offset-sm3>
+              <v-combobox
+                v-model="ingredients"
+                :items="items"
+                label="Add ingredients"
+                ingredients
+                solo
+                multiple
+              >
+                <template v-slot:selection="data">
+                  <v-chip :selected="data.selected" close @input="remove(data.item)">
+                    <strong>{{ data.item }}</strong>
+                  </v-chip>
+                </template>
+              </v-combobox>
+            </v-flex>
+          </v-layout>
 
           <v-layout row>
             <v-flex xs12 sm6 offset-sm3>
@@ -74,7 +93,9 @@ export default {
       location: '',
       imageUrl: '',
       description: '',
-      image: null
+      image: null,
+      ingredients: ['1/4 cup of suggar'],
+      items: []
     }
   },
   computed: {
@@ -82,7 +103,8 @@ export default {
       return this.title !== '' &&
         this.location !== '' &&
         this.imageUrl !== '' &&
-        this.description !== ''
+        this.description !== '' &&
+        this.ingredients.length !== 0
     }
   },
   methods: {
@@ -99,6 +121,7 @@ export default {
         image: this.image,
         createdDate: date,
         description: this.description,
+        ingredients: this.ingredients
       }
       this.$store.dispatch('createRecipe', recipeData)
       this.$router.push('/recipes')
@@ -116,6 +139,10 @@ export default {
       })
       fileReader.readAsDataURL(files[0])
       this.image = files[0]
+    },
+    remove(item) {
+      this.ingredients.splice(this.ingredients.indexOf(item), 1)
+      this.ingredients = [...this.ingredients]
     }
   }
 }
