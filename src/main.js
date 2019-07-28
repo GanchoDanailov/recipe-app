@@ -4,6 +4,7 @@ import router from './router'
 import firebase from 'firebase'
 import store from './store'
 import DateFilter from './filters/date'
+import DifficultyFilter from './filters/difficulty'
 import './registerServiceWorker'
 
 import Vuetify from 'vuetify'
@@ -12,6 +13,7 @@ import AlertCmp from './components/Shared/Alert.vue'
 
 Vue.use(Vuetify)
 Vue.filter('date', DateFilter)
+Vue.filter('difficulty', DifficultyFilter)
 Vue.component('app-alert', AlertCmp)
 
 Vue.config.productionTip = false

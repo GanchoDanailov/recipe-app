@@ -5,7 +5,7 @@
         <v-btn large router to="/recipes">Explore recipes</v-btn>
       </v-flex>
       <v-flex xs12 sm6 class="text-xs-center text-sm-left">
-        <v-btn large router to="/recipe/new">Organize recipe</v-btn>
+        <v-btn large router to="/recipe/new">Add a recipe</v-btn>
       </v-flex>
     </v-layout>
     <v-layout>

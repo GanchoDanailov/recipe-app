@@ -66,10 +66,8 @@
     </v-toolbar>
 
     <v-content>
-      <v-container fluid>
-        <!-- {{this.$store.state.rating.loadedRatings}} -->
-        <router-view></router-view>
-      </v-container>
+      <!-- {{this.$store.state.rating.loadedRatings}} -->
+      <router-view></router-view>
     </v-content>
 
     <v-footer app></v-footer>

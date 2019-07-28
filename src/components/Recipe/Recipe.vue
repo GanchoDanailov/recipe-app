@@ -14,14 +14,55 @@
     <v-layout row wrap>
       <v-flex xs12>
         <v-card>
-          <v-layout row wrap align-center>
-            <v-flex xs12 sm6 text-xs-center>
+          <v-layout row wrap>
+            <v-flex xs12 sm7 lg8>
+              <v-img :src="recipe.imageUrl" height="400px"></v-img>
+            </v-flex>
+            <v-flex xs12 sm5 lg4 text-xs-center>
               <div class="recipe-title">
                 <h1 class>{{ recipe.title }}</h1>
+
+                <div>
+                  <span class="float-right">Difficulty:</span>
+                  <span>{{ recipe.difficulty | difficulty }}</span>
+                </div>
+                <div>
+                  <span class="float-right">Doses for:</span>
+                  <span>{{ recipe.doses }} people</span>
+                </div>
+                <div>
+                  <span class="float-right">Cooking time:</span>
+                  <span>{{ recipe.cooking }} min</span>
+                </div>
               </div>
-            </v-flex>
-            <v-flex xs12 sm6>
-              <v-img :src="recipe.imageUrl" height="400px"></v-img>
+              <div class="rating-component" v-if="userIsAuthenticated" text-xs-center>
+                <star-rating
+                  v-model="isUserVoted"
+                  @rating-selected="setRating"
+                  inactive-color="#424242"
+                  active-color="#f6d607"
+                  :border-width="borderWidth"
+                  border-color="#000"
+                  class="rating-stars"
+                  v-bind:star-size="25"
+                  style="margin: 0 auto; width:210px;"
+                />
+                Avarage ratting: {{avgRating}}
+                <br />
+                All reviews: {{totalVotes}}
+                <br />
+              </div>
+              <v-btn
+                outline
+                large
+                fab
+                class="like-btn"
+                @click="toggleLike()"
+                v-bind="color"
+                v-if="userIsAuthenticated"
+              >
+                <v-icon>favorite</v-icon>
+              </v-btn>
             </v-flex>
           </v-layout>
 
@@ -30,39 +71,10 @@
           </v-card-text>
 
           <v-card-text>
-            <v-layout row wrap>
-              <v-flex xs12 sm6 text-xs-center>
-                <div class="rating-component" v-if="userIsAuthenticated" text-xs-center>
-                  <star-rating
-                    v-model="isUserVoted"
-                    @rating-selected="setRating"
-                    inactive-color="#424242"
-                    active-color="#FFFFFF"
-                    :border-width="borderWidth"
-                    border-color="#FFFFFF"
-                    v-bind:star-size="35"
-                    style="margin: 0 auto; width:210px;"
-                  />
-                  Avarage ratting: {{avgRating}}
-                  <br />
-                  All reviews: {{totalVotes}}
-                  <br />
-                </div>
-              </v-flex>
-              <v-flex xs12 sm6 text-xs-center>
-                <v-btn
-                  outline
-                  large
-                  fab
-                  @click="toggleLike()"
-                  v-bind="color"
-                  v-if="userIsAuthenticated"
-                >
-                  <v-icon>favorite</v-icon>
-                </v-btn>
-              </v-flex>
-            </v-layout>
             <v-divider></v-divider>
+            <v-layout row>
+              <v-flex xs12 sm8 offset-sm2 text-xs-center p-t-5 class="subtitle">Ingredients</v-flex>
+            </v-layout>
             <v-container fluid grid-list-sm>
               <v-layout row wrap>
                 <v-flex v-for="ingredient in recipe.ingredients" :key="ingredient" xs12 sm6 lg4>
@@ -78,9 +90,37 @@
                 </v-flex>
               </v-layout>
             </v-container>
-
             <v-divider></v-divider>
-            <div>{{ recipe.description }}</div>
+            <v-layout row>
+              <v-flex xs12 sm8 offset-sm2 text-xs-center p-t-5 class="subtitle">Directions</v-flex>
+            </v-layout>
+            <v-layout row>
+              <v-flex xs12>
+                <v-timeline align-top>
+                  <v-timeline-item v-for="(item, i) in directionsTodo" :key="i" color="#f6d607">
+                    <v-card color="#f6d607" dark>
+                      <v-card-title class="title" style="color:#424242">Step {{i + 1}}</v-card-title>
+                      <v-card-text
+                        class="text--primary"
+                        style="background: #424242; border: 1px solid #f6d707;"
+                      >
+                        <p>{{item.direction}}</p>
+                        <v-btn
+                          color="#f6d607"
+                          class="mx-0"
+                          outline
+                          v-bind:class="{ active: item.done }"
+                          v-on:click="check(item)"
+                        >
+                          <div v-if="item.done">Undone</div>
+                          <div v-else>Done</div>
+                        </v-btn>
+                      </v-card-text>
+                    </v-card>
+                  </v-timeline-item>
+                </v-timeline>
+              </v-flex>
+            </v-layout>
           </v-card-text>
           <!-- <v-card-actions>
             <v-spacer></v-spacer>
@@ -100,7 +140,8 @@ import { mapGetters } from 'vuex'
 export default {
   props: ['id'],
   data: () => ({
-    borderWidth: 4
+    borderWidth: 2,
+    directionsTodo: []
   }),
   components: {
     StarRating
@@ -125,11 +166,22 @@ export default {
       set() { }
     },
     recipe() {
-      return this.$store.getters.loadedRecipe(this.id) || {
+      let recipe = this.$store.getters.loadedRecipe(this.id) || {
         title: '',
         createdDate: '01-01-2019',
-        location: ''
+        directions: []
       }
+      if (recipe.directions.length > 0) {
+        recipe.directions.forEach(direction => {
+          this.directionsTodo.push({
+            id: Math.random().toString(36).substr(2, 9),
+            direction: direction.direction,
+            done: false
+          })
+        });
+
+      }
+      return recipe
     },
     recipeIsLiked() {
       if (this.recipe.likedUsers) {
@@ -139,7 +191,7 @@ export default {
       }
     },
     color() {
-      if (this.recipeIsLiked) { return { color: 'pink' } }
+      if (this.recipeIsLiked) { return { color: '#f6d607' } }
     },
     ...mapGetters(['loadedRating', 'avgRating', 'totalVotes'])
   },
@@ -163,11 +215,49 @@ export default {
       }
       this.$store.dispatch('setRating', payload)
     },
+    check(direction) {
+      direction.done = !direction.done
+    }
   }
 }
 </script>
 <style lang="scss" scoped>
 .recipe-title {
-  text-align: center;
+  span {
+    width: 110px;
+    display: inline-block;
+    text-align: left;
+    font-size: 17px;
+  }
+  span:not(.float-right) {
+    color: #f6d607;
+  }
+  .float-right {
+    // text-align: right;
+    margin-right: 10px;
+  }
+}
+h1 {
+  margin-bottom: 20px;
+}
+.like-btn {
+  margin-top: 20px;
+}
+.subtitle {
+  font-size: 25px;
+  padding: 10px;
+}
+.active {
+  background-color: #f6d607 !important;
+
+  color: #000 !important;
 }
 </style>
+<style lang="scss">
+.rating-stars {
+  .vue-star-rating {
+    margin: 20px auto 0 auto;
+  }
+}
+</style>
+

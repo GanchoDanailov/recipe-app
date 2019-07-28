@@ -9,16 +9,14 @@ export default {
         id: 'afajfjadfaadfa323',
         title: 'recipe in New York',
         createdDate: new Date(),
-        location: 'New York',
-        description: 'New York, New York!'
+        directions: 'New York, New York!'
       },
       {
         imageUrl: 'https://images.unsplash.com/photo-1556694795-b6423d3d5b28?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1000&q=80',
         id: 'aadsfhbkhlk1241',
         title: 'recipe in Paris',
         createdDate: new Date(),
-        location: 'Paris',
-        description: 'It\'s Paris!'
+        directions: 'It\'s Paris!'
       }
     ]
   },
@@ -79,12 +77,15 @@ export default {
           recipes.push({
             id: doc.id,
             title: doc.data().title,
-            description: doc.data().description,
+            directions: doc.data().directions,
             imageUrl: doc.data().imageUrl,
             createdDate: doc.data().createdDate,
             creatorId: doc.data().creatorId,
             likedUsers: doc.data().likedUsers,
-            ingredients: doc.data().ingredients
+            ingredients: doc.data().ingredients,
+            difficulty: doc.data().difficulty,
+            doses: doc.data().doses,
+            cooking: doc.data().cooking
           })
         })
         commit('setLoadedRecipes', recipes)
@@ -95,11 +96,14 @@ export default {
       commit('setLoading', true)
       let _recipe = {
         title: payload.title,
-        description: payload.description,
+        directions: payload.directions,
         createdDate: payload.createdDate.toISOString(),
         creatorId: getters.user.id,
         likedUsers: [],
-        ingredients: payload.ingredients
+        ingredients: payload.ingredients,
+        difficulty: payload.difficulty,
+        doses: payload.doses,
+        cooking: payload.cooking
       }
       const filename = payload.image.name
       let uploadTask = firebase.storage().ref('recipes/' + filename).put(payload.image)
